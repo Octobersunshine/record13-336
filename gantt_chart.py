@@ -30,6 +30,46 @@ def _setup_chinese_font():
 _setup_chinese_font()
 
 
+def _assign_tracks(tasks):
+    sorted_tasks = sorted(enumerate(tasks), key=lambda x: x[1]["start"])
+    original_indices = []
+    sorted_only = []
+    for idx, task in sorted_tasks:
+        original_indices.append(idx)
+        sorted_only.append(task)
+    
+    track_ends = []
+    track_assignments = []
+    
+    for task in sorted_only:
+        assigned = False
+        best_track = -1
+        best_gap = None
+        
+        for t_idx, track_end in enumerate(track_ends):
+            if track_end <= task["start"]:
+                gap = task["start"] - track_end
+                if best_gap is None or gap < best_gap:
+                    best_gap = gap
+                    best_track = t_idx
+        
+        if best_track != -1:
+            track_assignments.append(best_track)
+            track_ends[best_track] = task["end"]
+        else:
+            new_track = len(track_ends)
+            track_assignments.append(new_track)
+            track_ends.append(task["end"])
+    
+    num_tracks = len(track_ends)
+    
+    result = [None] * len(tasks)
+    for orig_idx, track_idx, task in zip(original_indices, track_assignments, sorted_only):
+        result[orig_idx] = (track_idx, task)
+    
+    return result, num_tracks
+
+
 def generate_gantt(tasks, output_path="gantt_chart.png", title="项目甘特图", 
                    figsize=(12, 8), bar_height=0.5, show_grid=True):
     if not tasks:
@@ -56,29 +96,43 @@ def generate_gantt(tasks, output_path="gantt_chart.png", title="项目甘特图"
             "color": task.get("color", None)
         })
 
-    parsed_tasks.sort(key=lambda x: x["start"])
+    assigned, num_tracks = _assign_tracks(parsed_tasks)
 
-    fig, ax = plt.subplots(figsize=figsize)
+    fig_height = max(figsize[1], 2 + num_tracks * 0.6)
+    fig, ax = plt.subplots(figsize=(figsize[0], fig_height))
     
     colors = plt.cm.tab20.colors
     
-    for i, task in enumerate(parsed_tasks):
-        color = task["color"] if task["color"] else colors[i % len(colors)]
+    track_task_names = {}
+    for task_idx, (track_idx, task) in enumerate(assigned):
+        color = task["color"] if task["color"] else colors[task_idx % len(colors)]
         start_num = mdates.date2num(task["start"])
         end_num = mdates.date2num(task["end"])
         duration = end_num - start_num
         
-        ax.barh(i, duration, left=start_num, height=bar_height, 
+        ax.barh(track_idx, duration, left=start_num, height=bar_height, 
                 color=color, align="center", edgecolor="black", linewidth=0.5)
         
         mid_point = start_num + duration / 2
         duration_days = duration
         duration_text = f"{duration_days:.1f} 天" if duration_days >= 1 else f"{duration_days * 24:.1f} 小时"
-        ax.text(mid_point, i, f"{task['name']}\n{duration_text}", 
+        ax.text(mid_point, track_idx, f"{task['name']}\n{duration_text}", 
                 ha="center", va="center", fontsize=9, color="black")
+        
+        if track_idx not in track_task_names:
+            track_task_names[track_idx] = []
+        track_task_names[track_idx].append(task["name"])
 
-    ax.set_yticks(range(len(parsed_tasks)))
-    ax.set_yticklabels([task["name"] for task in parsed_tasks])
+    y_labels = []
+    for t in range(num_tracks):
+        names = track_task_names.get(t, [])
+        if len(names) == 1:
+            y_labels.append(names[0])
+        else:
+            y_labels.append(f"轨道 {t+1} ({len(names)}个任务)")
+    
+    ax.set_yticks(range(num_tracks))
+    ax.set_yticklabels(y_labels)
     
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
