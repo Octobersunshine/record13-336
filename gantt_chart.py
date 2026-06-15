@@ -89,11 +89,18 @@ def generate_gantt(tasks, output_path="gantt_chart.png", title="项目甘特图"
         if end <= start:
             raise ValueError(f"任务 '{name}' 的结束时间必须晚于开始时间")
         
+        deps = task.get("dependencies", [])
+        if deps is None:
+            deps = []
+        if not isinstance(deps, list):
+            deps = [deps]
+        
         parsed_tasks.append({
             "name": name,
             "start": start,
             "end": end,
-            "color": task.get("color", None)
+            "color": task.get("color", None),
+            "dependencies": deps
         })
 
     assigned, num_tracks = _assign_tracks(parsed_tasks)
@@ -103,6 +110,7 @@ def generate_gantt(tasks, output_path="gantt_chart.png", title="项目甘特图"
     
     colors = plt.cm.tab20.colors
     
+    name_to_info = {}
     track_task_names = {}
     for task_idx, (track_idx, task) in enumerate(assigned):
         color = task["color"] if task["color"] else colors[task_idx % len(colors)]
@@ -122,6 +130,52 @@ def generate_gantt(tasks, output_path="gantt_chart.png", title="项目甘特图"
         if track_idx not in track_task_names:
             track_task_names[track_idx] = []
         track_task_names[track_idx].append(task["name"])
+        
+        name_to_info[task["name"]] = (track_idx, start_num, end_num, task)
+    
+    for task_idx, (track_idx, task) in enumerate(assigned):
+        for dep_name in task["dependencies"]:
+            if dep_name not in name_to_info:
+                import warnings
+                warnings.warn(f"任务 '{task['name']}' 的依赖 '{dep_name}' 不存在，已忽略")
+                continue
+            
+            dep_track, dep_start, dep_end, dep_task = name_to_info[dep_name]
+            curr_start = mdates.date2num(task["start"])
+            
+            x_from = dep_end
+            y_from = dep_track
+            x_to = curr_start
+            y_to = track_idx
+            
+            bar_half = bar_height / 2
+            
+            if y_from == y_to:
+                x_mid = (x_from + x_to) / 2
+                y_peak = y_from - bar_half - 0.15
+                ax.annotate("",
+                    xy=(x_to, y_to),
+                    xytext=(x_from, y_from),
+                    arrowprops=dict(
+                        arrowstyle="->",
+                        color="#555555",
+                        lw=1.2,
+                        connectionstyle=f"arc3,rad=-0.3"
+                    )
+                )
+            else:
+                direction = 1 if y_to > y_from else -1
+                x_mid = (x_from + x_to) / 2
+                ax.annotate("",
+                    xy=(x_to, y_to),
+                    xytext=(x_from, y_from),
+                    arrowprops=dict(
+                        arrowstyle="->",
+                        color="#555555",
+                        lw=1.2,
+                        connectionstyle=f"arc3,rad={direction * 0.2}"
+                    )
+                )
 
     y_labels = []
     for t in range(num_tracks):

@@ -1,0 +1,13 @@
+[
+    {"name": "项目启动", "start": "2026-06-01", "end": "2026-06-03", "color": "#74B9FF"},
+    {"name": "需求调研", "start": "2026-06-03", "end": "2026-06-08", "color": "#00B894", "dependencies": ["项目启动"]},
+    {"name": "需求评审", "start": "2026-06-08", "end": "2026-06-10", "color": "#6C5CE7", "dependencies": ["需求调研"]},
+    {"name": "架构设计", "start": "2026-06-10", "end": "2026-06-15", "color": "#A29BFE", "dependencies": ["需求评审"]},
+    {"name": "数据库设计", "start": "2026-06-12", "end": "2026-06-17", "color": "#FDCB6E", "dependencies": ["架构设计"]},
+    {"name": "UI设计", "start": "2026-06-12", "end": "2026-06-18", "color": "#E17055", "dependencies": ["需求评审"]},
+    {"name": "后端开发", "start": "2026-06-17", "end": "2026-06-28", "color": "#D63031", "dependencies": ["数据库设计", "架构设计"]},
+    {"name": "前端开发", "start": "2026-06-18", "end": "2026-06-28", "color": "#0984E3", "dependencies": ["UI设计"]},
+    {"name": "接口联调", "start": "2026-06-28", "end": "2026-07-02", "color": "#E84393", "dependencies": ["前端开发", "后端开发"]},
+    {"name": "集成测试", "start": "2026-07-02", "end": "2026-07-07", "color": "#636E72", "dependencies": ["接口联调"]},
+    {"name": "部署上线", "start": "2026-07-07", "end": "2026-07-09", "color": "#74B9FF", "dependencies": ["集成测试"]}
+]

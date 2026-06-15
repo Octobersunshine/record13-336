@@ -7,11 +7,11 @@ from gantt_chart import generate_gantt, generate_gantt_from_list
 def demo():
     tasks = [
         {"name": "需求分析", "start": "2026-06-01", "end": "2026-06-07"},
-        {"name": "系统设计", "start": "2026-06-05", "end": "2026-06-15"},
-        {"name": "前端开发", "start": "2026-06-10", "end": "2026-06-25"},
-        {"name": "后端开发", "start": "2026-06-12", "end": "2026-06-30"},
-        {"name": "测试", "start": "2026-06-25", "end": "2026-07-05"},
-        {"name": "上线部署", "start": "2026-07-03", "end": "2026-07-08"},
+        {"name": "系统设计", "start": "2026-06-05", "end": "2026-06-15", "dependencies": ["需求分析"]},
+        {"name": "前端开发", "start": "2026-06-10", "end": "2026-06-25", "dependencies": ["系统设计"]},
+        {"name": "后端开发", "start": "2026-06-12", "end": "2026-06-30", "dependencies": ["系统设计"]},
+        {"name": "测试", "start": "2026-06-25", "end": "2026-07-05", "dependencies": ["前端开发", "后端开发"]},
+        {"name": "上线部署", "start": "2026-07-03", "end": "2026-07-08", "dependencies": ["测试"]},
     ]
     
     output = generate_gantt(tasks, output_path="gantt_demo.png", title="项目开发甘特图")
@@ -44,7 +44,8 @@ def main():
     print("""
 [
     {"name": "任务1", "start": "2026-06-01", "end": "2026-06-05"},
-    {"name": "任务2", "start": "2026-06-03", "end": "2026-06-10", "color": "#FF6B6B"}
+    {"name": "任务2", "start": "2026-06-03", "end": "2026-06-10", "color": "#FF6B6B", "dependencies": ["任务1"]},
+    {"name": "任务3", "start": "2026-06-10", "end": "2026-06-15", "dependencies": ["任务1", "任务2"]}
 ]
     """)
 
